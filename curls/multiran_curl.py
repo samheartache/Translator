@@ -1,0 +1,30 @@
+cookies = {
+    'h': '1080',
+    'w': '1920',
+    'h1': '962',
+    '_ym_uid': '1740136547298585022',
+    '_ym_d': '1740136547',
+    '_ga': 'GA1.1.1076500012.1740136547',
+    'zone': '-180',
+    '_ym_isad': '1',
+    'langs': '1 2',
+    'w1': '1361',
+    '_ga_8BNQ9L4TKJ': 'GS1.1.1740229063.3.1.1740229607.0.0.0',
+}
+
+headers = {
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept-language': 'ru,en;q=0.9,en-GB;q=0.8,en-US;q=0.7',
+    'cache-control': 'no-cache',
+    'priority': 'u=0, i',
+    'sec-ch-ua': '"Not(A:Brand";v="99", "Microsoft Edge";v="133", "Chromium";v="133"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'none',
+    'sec-fetch-user': '?1',
+    'upgrade-insecure-requests': '1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 Edg/133.0.0.0',
+    # 'cookie': 'h=1080; w=1920; h1=962; _ym_uid=1740136547298585022; _ym_d=1740136547; _ga=GA1.1.1076500012.1740136547; zone=-180; _ym_isad=1; langs=1 2; w1=1361; _ga_8BNQ9L4TKJ=GS1.1.1740229063.3.1.1740229607.0.0.0',
+}
