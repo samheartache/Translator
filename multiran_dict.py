@@ -29,8 +29,5 @@ def translate(word: str) -> str:
 
     res = '\n\n'.join([f'{subj}: {", ".join(translations)}' for subj, translations in grouped_translations.items()])
     res = [[subj, ', '.join(translations)] for subj, translations in grouped_translations.items()]
-
-    with open('result.html', 'w', encoding='utf-8') as file:
-        file.write(response.text)
-
+    
     return res
