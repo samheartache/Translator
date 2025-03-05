@@ -6,7 +6,6 @@ from tkinter import colorchooser
 
 import pytesseract
 from PIL import ImageGrab, Image, ImageTk
-import keyboard
 import customtkinter as ctk
 from deep_translator import MyMemoryTranslator
 
@@ -168,14 +167,5 @@ class Settings:
         self.highlight_choice.configure(fg_color=chosen_color)
 
 
-def start_translation():
-    global CURRENT_THREAD
-    if CURRENT_THREAD and CURRENT_THREAD.is_alive():
-        CURRENT_THREAD._stop()
-    CURRENT_THREAD = threading.Thread(target=ImageTranslator, daemon=True).start()
-
-
 if __name__ == '__main__':
-    print("Script's running")
-    keyboard.add_hotkey('ctrl+alt+t', start_translation)
-    keyboard.wait("ctrl+e")
+    ImageTranslator()

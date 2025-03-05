@@ -29,5 +29,5 @@ def translate(word: str) -> str:
 
     res = '\n\n'.join([f'{subj}: {", ".join(translations)}' for subj, translations in grouped_translations.items()])
     res = [[subj, ', '.join(translations)] for subj, translations in grouped_translations.items()]
-    
+
     return res
