@@ -1,6 +1,7 @@
 {
     "Phrase": 0,
-    "Highlighting color": "#ff427a",
+    "Highlighting color": "#e455ec",
     "Theme current": "Dark",
-    "Source language": "eng+rus"
+    "Source language": "eng+rus",
+    "Hot key": "ctrl+alt+a"
 }

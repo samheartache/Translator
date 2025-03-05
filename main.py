@@ -1,6 +1,5 @@
 import time
 import sys
-import threading
 import json
 from tkinter import colorchooser
 
@@ -12,7 +11,6 @@ from deep_translator import MyMemoryTranslator
 from multiran_dict import translate
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-CURRENT_THREAD = None
 
 with open('settings.json', encoding='utf-8') as json_file:
     SETTINGS = json.load(json_file)
@@ -22,7 +20,8 @@ class ImageTranslator:
     def __init__(self):
         ctk.set_appearance_mode(SETTINGS['Theme current'].lower())
         self.root = ctk.CTk()
-        
+        self.root.bind('<ButtonPress-2>', self.close)
+
         self.x1 = self.y1 = None
         self.rect = None
 
@@ -36,13 +35,7 @@ class ImageTranslator:
         self.canvas.bind('<ButtonRelease-1>', self.screenshot)
         self.canvas.pack(fill=ctk.BOTH, expand=True)
 
-        original_image = Image.open('imgs/settings_img.png')
-        self.settings_image = ctk.CTkImage(light_image=original_image, dark_image=original_image, size=(50, 50))
-
-        self.settings_button = ctk.CTkButton(
-            self.root, command=self.open_settings, fg_color="transparent", width=50, height=50, image=self.settings_image, text='Settings'
-        )
-        self.canvas.create_window(50, 50, window=self.settings_button, anchor="nw")
+        self.create_menu()
         
         self.root.mainloop()
     
@@ -73,12 +66,12 @@ class ImageTranslator:
     
     def show_trans(self, src, tran, long=True):
         if not tran:
-            self.create_win(title='Text found error', size='400x200', labels=['Text not recognized', 'Please try highlighting the area again'])
+            self.create_errorwin(title='Text found error', size='400x200', labels=['Text not recognized', 'Please try highlighting the area again'])
             return
         
         trans_window = ctk.CTkToplevel()
         trans_window.title("Translation")
-        trans_window.geometry("500x250")
+        trans_window.geometry("520x250")
         
         ctk.CTkLabel(trans_window, text="Оригинал:").pack(anchor="w", padx=10, pady=5)
         ctk.CTkLabel(trans_window, text=src, wraplength=380).pack(anchor="w", padx=10)
@@ -98,13 +91,27 @@ class ImageTranslator:
 
         trans_window.protocol("WM_DELETE_WINDOW", self.close)
     
-    def create_win(self, title: str, size: str, labels: list[str]):
-        window = ctk.CTkToplevel()
-        window.geometry(size)
-        window.title(title)
+    def create_menu(self):
+        self.menu_frame = ctk.CTkFrame(self.root, width=200, height=50, fg_color="gray20", bg_color='black')
+        self.menu_frame.place(relx=0.5, rely=0, anchor="n")
+
+        original_setimage = Image.open('imgs/settings_img.png')
+        self.settings_image = ctk.CTkImage(light_image=original_setimage, dark_image=original_setimage, size=(30, 30))
+        self.settings_button = ctk.CTkButton(
+            self.menu_frame, command=self.open_settings, fg_color="transparent", width=30, height=30, image=self.settings_image, text=''
+        )
+        self.settings_button.pack(side="left", padx=5, pady=5)
+
+        self.close_button = ctk.CTkButton(self.menu_frame, command=self.close, text='Close', width=30, height=30)
+        self.close_button.pack(side="left", padx=5, pady=5)
+
+    def create_errorwin(self, title: str, size: str, labels: list[str]):
+        self.window = ctk.CTkToplevel()
+        self.window.geometry(size)
+        self.window.title(title)
 
         for label in labels:
-            ctk.CTkLabel(window, text=label).pack(anchor="w", padx=10, pady=5)
+            ctk.CTkLabel(self.window, text=label).pack(anchor="w", padx=10, pady=5)
 
     def open_settings(self):
         Settings(self)
@@ -146,9 +153,13 @@ class Settings:
         self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'], command=self.update_highlighting)
         self.highlight_choice.grid(row=1, column=1, padx=10, pady=10)
 
-        self.create_labels('Theme', 'Highlighting color', 'Source language')
+        key_var = ctk.StringVar(value=SETTINGS['Hot key'])
+        keys = ['ctrl+alt+t', 'ctrl+u', 't', 'ctrl+shift+w', 'ctrl+alt+a']
+        key_choice = ctk.CTkOptionMenu(self.settings_window, variable=key_var, values=keys, command=self.update_hotkey)
+        key_choice.grid(row=2, column=1, padx=10, pady=10)
 
-        
+        self.create_labels('Theme', 'Highlighting color', 'Hot key')
+
     def create_labels(self, *labels):
         for ind, label in enumerate(labels):
             ctk.CTkLabel(self.settings_window, text=label).grid(row=ind, column=0, padx=10, pady=10)
@@ -165,6 +176,11 @@ class Settings:
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
         self.highlight_choice.configure(fg_color=chosen_color)
+    
+    def update_hotkey(self, selected_key):
+        SETTINGS['Hot key'] = selected_key
+        with open('settings.json', 'w', encoding='utf-8') as json_file:
+            json.dump(SETTINGS, json_file, indent=4)
 
 
 if __name__ == '__main__':

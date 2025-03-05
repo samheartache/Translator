@@ -20,8 +20,8 @@ def translate(word: str) -> str:
         all_trans = [i.text for i in bs.find_all('td', class_='trans')]
         subjects = [a.find('a')['title'] for a in bs.find_all('td', class_='subj')]
         grouped_translations = defaultdict(list)
-    except TypeError:
-        print('Ошибка')
+    except TypeError as e:
+        print(e)
         return
 
     for trans, subj in zip(all_trans, subjects):
