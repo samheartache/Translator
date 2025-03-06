@@ -35,7 +35,7 @@ class ImageTranslator:
         self.canvas.bind('<ButtonRelease-1>', self.screenshot)
         self.canvas.pack(fill=ctk.BOTH, expand=True)
 
-        self.create_menu()
+        self.open_menu()
         
         self.root.mainloop()
     
@@ -90,20 +90,6 @@ class ImageTranslator:
             self.blockify_labels(translated_text, trans_window)
 
         trans_window.protocol("WM_DELETE_WINDOW", self.close)
-    
-    def create_menu(self):
-        self.menu_frame = ctk.CTkFrame(self.root, width=200, height=50, fg_color="gray20", bg_color='black')
-        self.menu_frame.place(relx=0.5, rely=0, anchor="n")
-
-        original_setimage = Image.open('imgs/settings_img.png')
-        self.settings_image = ctk.CTkImage(light_image=original_setimage, dark_image=original_setimage, size=(30, 30))
-        self.settings_button = ctk.CTkButton(
-            self.menu_frame, command=self.open_settings, fg_color="transparent", width=30, height=30, image=self.settings_image, text=''
-        )
-        self.settings_button.pack(side="left", padx=5, pady=5)
-
-        self.close_button = ctk.CTkButton(self.menu_frame, command=self.close, text='Close', width=30, height=30)
-        self.close_button.pack(side="left", padx=5, pady=5)
 
     def create_errorwin(self, title: str, size: str, labels: list[str]):
         self.window = ctk.CTkToplevel()
@@ -115,6 +101,9 @@ class ImageTranslator:
 
     def open_settings(self):
         Settings(self)
+    
+    def open_menu(self):
+        Menu(self)
     
     def blockify_labels(self, blocks: list[str], root):
         scrollable_frame = ctk.CTkScrollableFrame(root, width=480, height=300)
@@ -133,7 +122,7 @@ class ImageTranslator:
         self.root.quit()
         self.root.destroy()
         sys.exit(0)
-
+    
 
 class Settings:
     def __init__(self, parent):
@@ -181,6 +170,46 @@ class Settings:
         SETTINGS['Hot key'] = selected_key
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
+
+
+class Menu:
+    def __init__(self, parent):
+        self.parent = parent
+
+        self.menu_window = ctk.CTkToplevel()
+        self.menu_window.geometry("160x45+100+20")
+        self.menu_window.overrideredirect(True)
+        self.menu_window.attributes("-topmost", True)
+        self.menu_window.grab_set()
+        self.menu_window.focus_force()
+
+        self.menu_frame = ctk.CTkFrame(self.menu_window, width=200, height=50, 
+                                     fg_color="gray20", bg_color='black')
+        self.menu_frame.pack()
+
+        self.start_button = ctk.CTkButton(self.menu_frame, command=self.change_focus, width=30, height=30, text='Start')
+        self.start_button.pack(side='left', padx=5, pady=5)
+
+        original_setimage = Image.open('imgs/settings_img.png')
+        self.settings_image = ctk.CTkImage(light_image=original_setimage, dark_image=original_setimage, size=(30, 30))
+        self.settings_button = ctk.CTkButton(
+            self.menu_frame, command=self.open_settings, fg_color="transparent", width=30, height=30, image=self.settings_image, text=''
+        )
+        self.settings_button.pack(side="left", padx=5, pady=5)
+
+        self.close_button = ctk.CTkButton(self.menu_frame, command=self.close, text='Close', width=30, height=30)
+        self.close_button.pack(side="left", padx=5, pady=5)
+
+
+    def open_settings(self):
+        Settings(self)
+
+    def close(self):
+        self.menu_window.destroy()
+        sys.exit(0)
+    
+    def change_focus(self):
+        self.parent.root.grab_set()
 
 
 if __name__ == '__main__':
