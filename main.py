@@ -20,6 +20,8 @@ class ImageTranslator:
     def __init__(self):
         ctk.set_appearance_mode(SETTINGS['Theme current'].lower())
         self.root = ctk.CTk()
+        self.screen_width = self.root.winfo_screenwidth()
+        self.screen_height = self.root.winfo_screenheight()
         self.root.bind('<ButtonPress-2>', self.close)
 
         self.x1 = self.y1 = None
@@ -27,7 +29,6 @@ class ImageTranslator:
 
         self.root.attributes('-fullscreen', True)
         self.root.attributes('-alpha', 0.3)
-        self.root.attributes('-topmost', True)
         
         self.canvas = ctk.CTkCanvas(self.root, bg='black', highlightthickness=0, cursor='cross')
         self.canvas.bind('<ButtonPress-1>', self.press)
@@ -35,7 +36,7 @@ class ImageTranslator:
         self.canvas.bind('<ButtonRelease-1>', self.screenshot)
         self.canvas.pack(fill=ctk.BOTH, expand=True)
 
-        self.open_menu()
+        self.menu = Menu(self)
         
         self.root.mainloop()
     
@@ -92,18 +93,17 @@ class ImageTranslator:
         trans_window.protocol("WM_DELETE_WINDOW", self.close)
 
     def create_errorwin(self, title: str, size: str, labels: list[str]):
-        self.window = ctk.CTkToplevel()
-        self.window.geometry(size)
-        self.window.title(title)
+        window = ctk.CTkToplevel()
+        window.geometry(size)
+        window.title(title)
 
         for label in labels:
-            ctk.CTkLabel(self.window, text=label).pack(anchor="w", padx=10, pady=5)
+            ctk.CTkLabel(window, text=label).pack(anchor="w", padx=10, pady=5)
+        
+        window.protocol("WM_DELETE_WINDOW", self.close)
 
     def open_settings(self):
         Settings(self)
-    
-    def open_menu(self):
-        Menu(self)
     
     def blockify_labels(self, blocks: list[str], root):
         scrollable_frame = ctk.CTkScrollableFrame(root, width=480, height=300)
@@ -161,6 +161,8 @@ class Settings:
     
     def update_highlighting(self):
         chosen_color = colorchooser.askcolor(title='Choose highlighting color')[1]
+        if chosen_color is None:
+            return
         SETTINGS['Highlighting color'] = chosen_color
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
@@ -177,18 +179,15 @@ class Menu:
         self.parent = parent
 
         self.menu_window = ctk.CTkToplevel()
-        self.menu_window.geometry("160x45+100+20")
+        x = (self.parent.screen_width - 112) // 2
+        self.menu_window.geometry(f"112x45+{x}+0")
         self.menu_window.overrideredirect(True)
         self.menu_window.attributes("-topmost", True)
-        self.menu_window.grab_set()
         self.menu_window.focus_force()
 
         self.menu_frame = ctk.CTkFrame(self.menu_window, width=200, height=50, 
                                      fg_color="gray20", bg_color='black')
-        self.menu_frame.pack()
-
-        self.start_button = ctk.CTkButton(self.menu_frame, command=self.change_focus, width=30, height=30, text='Start')
-        self.start_button.pack(side='left', padx=5, pady=5)
+        self.menu_frame.pack(fill=ctk.BOTH, expand=True)
 
         original_setimage = Image.open('imgs/settings_img.png')
         self.settings_image = ctk.CTkImage(light_image=original_setimage, dark_image=original_setimage, size=(30, 30))
@@ -200,16 +199,14 @@ class Menu:
         self.close_button = ctk.CTkButton(self.menu_frame, command=self.close, text='Close', width=30, height=30)
         self.close_button.pack(side="left", padx=5, pady=5)
 
+        self.parent.root.grab_set()
 
-    def open_settings(self):
+    def open_settings(self, start=False):
         Settings(self)
 
     def close(self):
         self.menu_window.destroy()
         sys.exit(0)
-    
-    def change_focus(self):
-        self.parent.root.grab_set()
 
 
 if __name__ == '__main__':
