@@ -6,9 +6,9 @@ from tkinter import colorchooser
 import pytesseract
 from PIL import ImageGrab, Image, ImageTk
 import customtkinter as ctk
-from deep_translator import MyMemoryTranslator
 
 from multiran_dict import translate
+from selenium_translate import selenium_trans
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -57,15 +57,14 @@ class ImageTranslator:
     
     def translate_image(self, image):
         text = pytesseract.image_to_string(image=image, lang=SETTINGS['Source language'])
-        if len(text.split()) > 1:
-            translator = MyMemoryTranslator(source='english', target='russian')
-            translated = translator.translate(text, return_all=True)
-            self.show_trans(text, translated)
+        if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
+            sel_trans = selenium_trans(text, src='eng', target='rus')
+            self.show_trans(text, sel_trans, method='sel')
         else:
             wrd_trans = translate(text)
-            self.show_trans(text, wrd_trans, long=False)
+            self.show_trans(text, wrd_trans, method='multiran')
     
-    def show_trans(self, src, tran, long=True):
+    def show_trans(self, src, tran, method):
         if not tran:
             self.create_errorwin(title='Text found error', size='400x200', labels=['Text not recognized', 'Please try highlighting the area again'])
             return
@@ -77,15 +76,15 @@ class ImageTranslator:
         ctk.CTkLabel(trans_window, text="Оригинал:").pack(anchor="w", padx=10, pady=5)
         ctk.CTkLabel(trans_window, text=src, wraplength=380).pack(anchor="w", padx=10)
         ctk.CTkLabel(trans_window, text="Перевод:").pack(anchor="w", padx=10, pady=5)
-        
-        if long:
-            best = tran[0]
-            res = {best}
-            for i in tran:
-                if isinstance(i, dict):
-                    res.add(i['translation'])
-            
-            translated_text = ','.join(res)
+
+        if method == 'sel':
+            translated_text = tran
+            scrollable_frame = ctk.CTkScrollableFrame(trans_window, width=480, height=300)
+            scrollable_frame.pack(padx=5, pady=5, fill="both", expand=True)
+            block = ctk.CTkFrame(scrollable_frame, corner_radius=10)
+            block.pack(padx=10, pady=5, fill="x")
+            content = ctk.CTkLabel(block, text=translated_text, wraplength=450, justify="left", anchor="w")
+            content.pack(fill="x", padx=10, pady=(0, 5))
         else:
             translated_text = tran
             self.blockify_labels(translated_text, trans_window)
@@ -147,7 +146,12 @@ class Settings:
         key_choice = ctk.CTkOptionMenu(self.settings_window, variable=key_var, values=keys, command=self.update_hotkey)
         key_choice.grid(row=2, column=1, padx=10, pady=10)
 
-        self.create_labels('Theme', 'Highlighting color', 'Hot key')
+        method_var = ctk.StringVar(value=SETTINGS['Method'])
+        methods = ['Multiran scrap', 'Reverso scrap(Selenium)']
+        method_choice = ctk.CTkOptionMenu(self.settings_window, variable=method_var, values=methods, command=self.update_method)
+        method_choice.grid(row=3, column=1, padx=10, pady=10)
+
+        self.create_labels('Theme', 'Highlighting color', 'Hot key', "Tranlation's method")
 
     def create_labels(self, *labels):
         for ind, label in enumerate(labels):
@@ -170,6 +174,11 @@ class Settings:
     
     def update_hotkey(self, selected_key):
         SETTINGS['Hot key'] = selected_key
+        with open('settings.json', 'w', encoding='utf-8') as json_file:
+            json.dump(SETTINGS, json_file, indent=4)
+    
+    def update_method(self, selected_method):
+        SETTINGS['Method'] = selected_method
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
 
