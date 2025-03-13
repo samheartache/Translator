@@ -1,7 +1,7 @@
 {
-    "Phrase": 0,
-    "Highlighting color": "#fe4364",
+    "Highlighting color": "#5559ec",
     "Theme current": "Dark",
     "Source language": "eng+rus",
-    "Hot key": "ctrl+alt+a"
+    "Hot key": "ctrl+alt+a",
+    "Method": "Reverso scrap(Selenium)"
 }
