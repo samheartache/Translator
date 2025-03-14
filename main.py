@@ -4,11 +4,12 @@ import json
 from tkinter import colorchooser
 
 import pytesseract
-from PIL import ImageGrab, Image, ImageTk
+from PIL import ImageGrab, Image
 import customtkinter as ctk
 
 from multiran_dict import translate
 from selenium_translate import selenium_trans
+from languages import langs_multiran, lang_abr, lang_abr_reverso
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -18,7 +19,7 @@ with open('settings.json', encoding='utf-8') as json_file:
 
 class ImageTranslator:
     def __init__(self):
-        ctk.set_appearance_mode(SETTINGS['Theme current'].lower())
+        ctk.set_appearance_mode(SETTINGS['Theme'].lower())
         self.root = ctk.CTk()
         self.screen_width = self.root.winfo_screenwidth()
         self.screen_height = self.root.winfo_screenheight()
@@ -56,18 +57,22 @@ class ImageTranslator:
         self.translate_image(image)
     
     def translate_image(self, image):
-        text = pytesseract.image_to_string(image=image, lang=SETTINGS['Source language'])
+        text = pytesseract.image_to_string(image=image, lang='eng+rus').replace('\n', ' ')
         if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
-            sel_trans = selenium_trans(text, src='eng', target='rus')
+            sel_trans = selenium_trans(text, src=lang_abr_reverso[SETTINGS['Source language']], target=lang_abr_reverso[SETTINGS['Target language']])
             self.show_trans(text, sel_trans, method='sel')
         else:
-            wrd_trans = translate(text)
+            wrd_trans = translate(text, src=langs_multiran[lang_abr[SETTINGS['Source language']]], target=langs_multiran[lang_abr[SETTINGS['Target language']]])
             self.show_trans(text, wrd_trans, method='multiran')
     
     def show_trans(self, src, tran, method):
         if not tran:
             self.create_errorwin(title='Text found error', size='400x200', labels=['Text not recognized', 'Please try highlighting the area again'])
             return
+        if method == 'multiran' and len(src.split()) > 1:
+                self.create_errorwin(title='Incorrect input for multiran', size='400x200', labels=['Multiran method can handle only single words'\
+                                                                                                   , 'If you want to translate bigger text choose  the reverso method'])
+                return
         
         trans_window = ctk.CTkToplevel()
         trans_window.title("Translation")
@@ -128,40 +133,34 @@ class Settings:
         self.parent = parent
         
         self.settings_window = ctk.CTkToplevel()
-        self.settings_window.geometry("400x200")
+        self.settings_window.geometry("400x300")
         self.settings_window.title("Settings")
         self.settings_window.attributes('-topmost', True)
         self.settings_window.grab_set()
-        
-        theme_var = ctk.StringVar(value=SETTINGS['Theme current'])
-        themes = ["Dark", "Light"]
-        theme_choice = ctk.CTkOptionMenu(self.settings_window, variable=theme_var, values=themes, command=self.update_theme)
-        theme_choice.grid(row=0, column=1, padx=10, pady=10)
 
-        self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'], command=self.update_highlighting)
-        self.highlight_choice.grid(row=1, column=1, padx=10, pady=10)
+        self.create_labels('Theme', 'Highlighting color', 'Hot key', "Tranlation's method", 'Source language', 'Target language')
 
-        key_var = ctk.StringVar(value=SETTINGS['Hot key'])
-        keys = ['ctrl+alt+t', 'ctrl+u', 't', 'ctrl+shift+w', 'ctrl+alt+a']
-        key_choice = ctk.CTkOptionMenu(self.settings_window, variable=key_var, values=keys, command=self.update_hotkey)
-        key_choice.grid(row=2, column=1, padx=10, pady=10)
-
-        method_var = ctk.StringVar(value=SETTINGS['Method'])
-        methods = ['Multiran scrap', 'Reverso scrap(Selenium)']
-        method_choice = ctk.CTkOptionMenu(self.settings_window, variable=method_var, values=methods, command=self.update_method)
-        method_choice.grid(row=3, column=1, padx=10, pady=10)
-
-        self.create_labels('Theme', 'Highlighting color', 'Hot key', "Tranlation's method")
+        self.create_options(
+            theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
+            highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht', lambda x: self.update_setting('Highlighting color', x)],
+            key = [ctk.StringVar(value=SETTINGS['Hot key']), ['ctrl+alt+t', 'ctrl+u', 't', 'ctrl+shift+w', 'ctrl+alt+a'], lambda x: self.update_setting('Hot key', x)],
+            method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multiran scrap', 'Reverso scrap(Selenium)'], lambda x: self.update_setting('Method', x)],
+            srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), lambda x: self.update_setting('Source language', x)],
+            target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), lambda x: self.update_setting('Target language', x)]
+        )
 
     def create_labels(self, *labels):
         for ind, label in enumerate(labels):
             ctk.CTkLabel(self.settings_window, text=label).grid(row=ind, column=0, padx=10, pady=10)
-    
-    def update_theme(self, selected_theme):
-        SETTINGS['Theme current'] = selected_theme
-        with open('settings.json', 'w', encoding='utf-8') as json_file:
-            json.dump(SETTINGS, json_file, indent=4)
-        ctk.set_appearance_mode(selected_theme.lower())
+
+    def create_options(self, **stats):
+        for ind, stat in enumerate(stats):
+            if stats[stat][1] == 'ht':
+                self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'], command=self.update_highlighting)
+                self.highlight_choice.grid(row=1, column=1, padx=10, pady=10)
+            else:
+                choice = ctk.CTkOptionMenu(self.settings_window, variable=stats[stat][0], values=stats[stat][1], command=stats[stat][2])
+                choice.grid(row=ind, column=1, padx=10, pady=10)
     
     def update_highlighting(self):
         chosen_color = colorchooser.askcolor(title='Choose highlighting color')[1]
@@ -172,16 +171,13 @@ class Settings:
             json.dump(SETTINGS, json_file, indent=4)
         self.highlight_choice.configure(fg_color=chosen_color)
     
-    def update_hotkey(self, selected_key):
-        SETTINGS['Hot key'] = selected_key
+    def update_setting(self, setting_option, selected, theme=False):
+        SETTINGS[setting_option] = selected
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
+        if theme:
+            ctk.set_appearance_mode(selected.lower())
     
-    def update_method(self, selected_method):
-        SETTINGS['Method'] = selected_method
-        with open('settings.json', 'w', encoding='utf-8') as json_file:
-            json.dump(SETTINGS, json_file, indent=4)
-
 
 class Menu:
     def __init__(self, parent):
@@ -210,7 +206,7 @@ class Menu:
 
         self.parent.root.grab_set()
 
-    def open_settings(self, start=False):
+    def open_settings(self):
         Settings(self)
 
     def close(self):

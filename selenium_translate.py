@@ -1,13 +1,12 @@
+from urllib.parse import quote
+import time
+
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
-from selenium.webdriver.common.keys import Keys 
 from selenium.webdriver.common.by import By
-
-from urllib.parse import quote
-import time
 
 
 def initialize_driver():
@@ -28,7 +27,7 @@ def selenium_trans(text: str, src: str, target: str):
     driver = initialize_driver()
     encoded = quote(text)
     driver.get(f'https://www.reverso.net/перевод-текста#sl={src}&tl={target}&text={encoded}')
-    time.sleep(5)
+    time.sleep(2)
     res = ''
     try:
         # Find a single word
@@ -41,7 +40,7 @@ def selenium_trans(text: str, src: str, target: str):
             try:
                 # Find huge amount of text
                 spans = driver.find_elements(By.XPATH, "//div[contains(@class, 'sentence-wrapper_target')]//span[@data-index]")
-                res = ''.join([span.text for span in spans])
+                res = ' '.join([span.text for span in spans])
             except:
                 res = 'Unable to get the translation'
     return res

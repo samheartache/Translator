@@ -2,15 +2,14 @@ from collections import defaultdict
 
 import requests
 from bs4 import BeautifulSoup
-from pprint import pprint
 
 from curls.multiran_curl import cookies, headers
 
-def translate(word: str) -> str:
+def translate(word: str, src, target) -> str:
     params = {
         's': word,
-        'l1': '1',
-        'l2': '2',
+        'l1': src,
+        'l2': target,
     }
 
     response = requests.get('https://www.multitran.com/m.exe', params=params, cookies=cookies, headers=headers)

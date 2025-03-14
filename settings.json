@@ -1,7 +1,8 @@
 {
-    "Highlighting color": "#5559ec",
-    "Theme current": "Dark",
-    "Source language": "eng+rus",
+    "Highlighting color": "#d259e8",
+    "Theme": "Dark",
+    "Source language": "English",
+    "Target language": "Russian",
     "Hot key": "ctrl+alt+a",
     "Method": "Multiran scrap"
 }
