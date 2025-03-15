@@ -6,6 +6,7 @@ from tkinter import colorchooser
 import pytesseract
 from PIL import ImageGrab, Image
 import customtkinter as ctk
+import keyboard
 
 from multitran_dict import translate
 from selenium_translate import selenium_trans
@@ -143,7 +144,7 @@ class Settings:
         self.create_options(
             theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
             highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht', lambda x: self.update_setting('Highlighting color', x)],
-            key = [ctk.StringVar(value=SETTINGS['Hot key']), ['ctrl+alt+t', 'ctrl+u', 't', 'ctrl+shift+w', 'ctrl+alt+a'], lambda x: self.update_setting('Hot key', x)],
+            key = [ctk.StringVar(value=SETTINGS['Hot key']), 'k', self.update_hotkey],
             method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrap', 'Reverso scrap(Selenium)'], lambda x: self.update_setting('Method', x)],
             srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), lambda x: self.update_setting('Source language', x)],
             target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), lambda x: self.update_setting('Target language', x)]
@@ -158,6 +159,10 @@ class Settings:
             if stats[stat][1] == 'ht':
                 self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'], command=self.update_highlighting)
                 self.highlight_choice.grid(row=1, column=1, padx=10, pady=10)
+            elif stats[stat][1] == 'k':
+                self.hotkey_choice = ctk.CTkButton(self.settings_window, text=f'{SETTINGS["Hot key"]}(click=change)',\
+                                                   command=stats[stat][2])
+                self.hotkey_choice.grid(row=2, column=1, padx=10, pady=10)
             else:
                 choice = ctk.CTkOptionMenu(self.settings_window, variable=stats[stat][0], values=stats[stat][1], command=stats[stat][2])
                 choice.grid(row=ind, column=1, padx=10, pady=10)
@@ -177,6 +182,9 @@ class Settings:
             json.dump(SETTINGS, json_file, indent=4)
         if theme:
             ctk.set_appearance_mode(selected.lower())
+    
+    def update_hotkey(self):
+        KeyTrack(self)
     
 
 class Menu:
@@ -310,6 +318,50 @@ class Translator:
 
     def update_setting(self, setting_option, selected):
         SETTINGS[setting_option] = selected
+        with open('settings.json', 'w', encoding='utf-8') as json_file:
+            json.dump(SETTINGS, json_file, indent=4)
+
+
+class KeyTrack:
+    def __init__(self, parent):
+        self.parent = parent
+
+        self.track_wind = ctk.CTkToplevel()
+        self.track_wind.geometry('500x150+100+100')
+        self.track_wind.title('Hot key reassignment')
+        self.track_wind.grab_set()
+
+        self.current_key = ''
+
+        self.label = ctk.CTkLabel(self.track_wind, text='Press any key')
+        self.label.grid(row=0, column=0, pady=5)
+
+        self.input_area = ctk.CTkTextbox(self.track_wind, width=480, height=50, wrap='word')
+        self.input_area.grid(row=1, column=0, columnspan=1, padx=10)
+
+        self.confirm_button = ctk.CTkButton(self.track_wind, text='Confirm', width=480, height=25, command=self.confirm)
+        self.confirm_button.grid(row=2, column=0, columnspan=1)
+
+        self.undo_button = ctk.CTkButton(self.track_wind, text='Undo', width=480, height=25, command=self.undo)
+        self.undo_button.grid(row=3, column=0, columnspan=1, pady=10)
+        
+        keyboard.on_press(self.track_key)
+    
+    def track_key(self, key):
+        if not self.current_key:
+            self.current_key += key.name
+            self.input_area.insert('end', key.name)
+        else:
+            self.current_key += f'+{key.name}'
+            self.input_area.insert('end', f'+{key.name}')
+    
+    def undo(self):
+        self.current_key = '+'.join(self.current_key.split('+')[:-1])
+        self.input_area.delete('1.0', 'end')
+        self.input_area.insert('end', self.current_key)
+
+    def confirm(self):
+        SETTINGS['Hot key'] = self.current_key
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
 
