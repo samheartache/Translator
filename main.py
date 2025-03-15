@@ -7,9 +7,9 @@ import pytesseract
 from PIL import ImageGrab, Image
 import customtkinter as ctk
 
-from multiran_dict import translate
+from multitran_dict import translate
 from selenium_translate import selenium_trans
-from languages import langs_multiran, lang_abr, lang_abr_reverso
+from languages import langs_multitran, lang_abr, lang_abr_reverso
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -59,18 +59,18 @@ class ImageTranslator:
     def translate_image(self, image):
         text = pytesseract.image_to_string(image=image, lang='eng+rus').replace('\n', ' ')
         if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
-            sel_trans = selenium_trans(text, src=lang_abr_reverso[SETTINGS['Source language']], target=lang_abr_reverso[SETTINGS['Target language']])
+            sel_trans = selenium_trans(text.lower(), src=lang_abr_reverso[SETTINGS['Source language']], target=lang_abr_reverso[SETTINGS['Target language']])
             self.show_trans(text, sel_trans, method='sel')
         else:
-            wrd_trans = translate(text, src=langs_multiran[lang_abr[SETTINGS['Source language']]], target=langs_multiran[lang_abr[SETTINGS['Target language']]])
-            self.show_trans(text, wrd_trans, method='multiran')
+            wrd_trans = translate(text.lower(), src=langs_multitran[lang_abr[SETTINGS['Source language']]], target=langs_multitran[lang_abr[SETTINGS['Target language']]])
+            self.show_trans(text, wrd_trans, method='multitran')
     
     def show_trans(self, src, tran, method):
         if not tran:
             self.create_errorwin(title='Text found error', size='400x200', labels=['Text not recognized', 'Please try highlighting the area again'])
             return
-        if method == 'multiran' and len(src.split()) > 1:
-                self.create_errorwin(title='Incorrect input for multiran', size='400x200', labels=['Multiran method can handle only single words'\
+        if method == 'multitran' and len(src.split()) > 1:
+                self.create_errorwin(title='Incorrect input for multitran', size='400x200', labels=['Multitran method can handle only single words'\
                                                                                                    , 'If you want to translate bigger text choose  the reverso method'])
                 return
         
@@ -144,7 +144,7 @@ class Settings:
             theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
             highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht', lambda x: self.update_setting('Highlighting color', x)],
             key = [ctk.StringVar(value=SETTINGS['Hot key']), ['ctrl+alt+t', 'ctrl+u', 't', 'ctrl+shift+w', 'ctrl+alt+a'], lambda x: self.update_setting('Hot key', x)],
-            method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multiran scrap', 'Reverso scrap(Selenium)'], lambda x: self.update_setting('Method', x)],
+            method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrap', 'Reverso scrap(Selenium)'], lambda x: self.update_setting('Method', x)],
             srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), lambda x: self.update_setting('Source language', x)],
             target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), lambda x: self.update_setting('Target language', x)]
         )
@@ -184,8 +184,8 @@ class Menu:
         self.parent = parent
 
         self.menu_window = ctk.CTkToplevel()
-        x = (self.parent.screen_width - 112) // 2
-        self.menu_window.geometry(f"112x45+{x}+0")
+        x = (self.parent.screen_width - 192) // 2
+        self.menu_window.geometry(f"192x45+{x}+0")
         self.menu_window.overrideredirect(True)
         self.menu_window.attributes("-topmost", True)
         self.menu_window.focus_force()
@@ -201,6 +201,9 @@ class Menu:
         )
         self.settings_button.pack(side="left", padx=5, pady=5)
 
+        self.translator_button = ctk.CTkButton(self.menu_frame, command=self.translator, text='Translator', width=60, height=30)
+        self.translator_button.pack(side="left", padx=5, pady=5)
+
         self.close_button = ctk.CTkButton(self.menu_frame, command=self.close, text='Close', width=30, height=30)
         self.close_button.pack(side="left", padx=5, pady=5)
 
@@ -208,10 +211,107 @@ class Menu:
 
     def open_settings(self):
         Settings(self)
+    
+    def translator(self):
+        Translator(self)
 
     def close(self):
         self.menu_window.destroy()
         sys.exit(0)
+
+
+class Translator:
+    def __init__(self, parent):
+        self.parent = parent
+
+        self.translator_wind = ctk.CTkToplevel()
+        self.translator_wind.geometry('600x400')
+        self.translator_wind.title('Translator')
+        self.translator_wind.attributes('-topmost', True)
+        self.translator_wind.grab_set()
+
+        self.src_lang_label = ctk.CTkLabel(self.translator_wind, text="Source Language:")
+        self.src_lang_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+        self.src_lang_var = ctk.StringVar(value=SETTINGS['Default source'])
+        self.src_lang_menu = ctk.CTkOptionMenu(
+            self.translator_wind, variable=self.src_lang_var, values=list(lang_abr.keys()),
+            command=lambda x: self.update_setting('Default source', x)
+        )
+        self.src_lang_menu.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+
+        self.target_lang_label = ctk.CTkLabel(self.translator_wind, text="Target Language:")
+        self.target_lang_label.grid(row=0, column=2, padx=10, pady=10, sticky="w")
+
+        self.target_lang_var = ctk.StringVar(value=SETTINGS['Default target'])
+        self.target_lang_menu = ctk.CTkOptionMenu(
+            self.translator_wind, variable=self.target_lang_var, values=list(lang_abr.keys()),
+            command=lambda x: self.update_setting('Default target', x)
+        )
+        self.target_lang_menu.grid(row=0, column=3, padx=10, pady=10, sticky="ew")
+
+        self.input_text = ctk.CTkTextbox(self.translator_wind, width=250, height=150, wrap="word")
+        self.input_text.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        self.output_frame = ctk.CTkScrollableFrame(self.translator_wind, width=250, height=150)
+        self.output_frame.grid(row=1, column=2, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        self.translate_button = ctk.CTkButton(
+            self.translator_wind, text="Translate", command=self.translate_text
+        )
+        self.translate_button.grid(row=2, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
+
+        self.translator_wind.grid_rowconfigure(1, weight=1)
+        self.translator_wind.grid_columnconfigure(0, weight=1)
+        self.translator_wind.grid_columnconfigure(1, weight=1)
+        self.translator_wind.grid_columnconfigure(2, weight=1)
+        self.translator_wind.grid_columnconfigure(3, weight=1)
+
+    def translate_text(self):
+        input_text = self.input_text.get("1.0", "end-1c").strip()
+        if not input_text:
+            return
+
+        src_lang = lang_abr[self.src_lang_var.get()]
+        target_lang = lang_abr[self.target_lang_var.get()]
+
+        if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
+            translated_text = selenium_trans(
+                input_text, src=lang_abr_reverso[SETTINGS['Source language']],
+                target=lang_abr_reverso[SETTINGS['Target language']]
+            )
+            self.show_simple_translation(translated_text)
+        else:
+            translated_text = translate(
+                input_text, src=langs_multitran[src_lang], target=langs_multitran[target_lang]
+            )
+            self.blockify_labels(translated_text, self.output_frame)
+
+    def show_simple_translation(self, text):
+        for widget in self.output_frame.winfo_children():
+            widget.destroy()
+
+        label = ctk.CTkLabel(self.output_frame, text=text, wraplength=400, justify="left")
+        label.pack(padx=5, pady=2, anchor="w")
+
+    def blockify_labels(self, blocks: list, root):
+        for widget in root.winfo_children():
+            widget.destroy()
+
+        for b in blocks:
+            block = ctk.CTkFrame(root, corner_radius=10)
+            block.pack(padx=10, pady=5, fill="x")
+
+            headline = ctk.CTkLabel(block, text=b[0], font=("Arial", 12, "bold"), justify="left", anchor="w")
+            headline.pack(fill="x", padx=10, pady=(5, 2))
+
+            content = ctk.CTkLabel(block, text=b[1], wraplength=220, justify="left", anchor="w")
+            content.pack(fill="x", padx=10, pady=(0, 5))
+
+    def update_setting(self, setting_option, selected):
+        SETTINGS[setting_option] = selected
+        with open('settings.json', 'w', encoding='utf-8') as json_file:
+            json.dump(SETTINGS, json_file, indent=4)
 
 
 if __name__ == '__main__':

@@ -4,5 +4,7 @@
     "Source language": "English",
     "Target language": "Russian",
     "Hot key": "ctrl+alt+a",
-    "Method": "Multiran scrap"
+    "Method": "Multitran scrap",
+    "Default source": "English",
+    "Default target": "Russian"
 }

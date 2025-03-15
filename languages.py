@@ -37,7 +37,7 @@ lang_abr = {
     "Vietnamese": "vie"
 }
 
-langs_multiran = {
+langs_multitran = {
     "ara": "10",
     "eus": "68",
     "bul": "15",

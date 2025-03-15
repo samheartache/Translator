@@ -1,9 +1,10 @@
 from collections import defaultdict
+from pprint import pprint
 
 import requests
 from bs4 import BeautifulSoup
 
-from curls.multiran_curl import cookies, headers
+from curls.multitran_curl import cookies, headers
 
 def translate(word: str, src, target) -> str:
     params = {
@@ -13,18 +14,18 @@ def translate(word: str, src, target) -> str:
     }
 
     response = requests.get('https://www.multitran.com/m.exe', params=params, cookies=cookies, headers=headers)
+
     bs = BeautifulSoup(response.text, 'lxml')
-
-    try:
-        all_trans = [i.text for i in bs.find_all('td', class_='trans')]
-        subjects = [a.find('a')['title'] for a in bs.find_all('td', class_='subj')]
-        grouped_translations = defaultdict(list)
-    except TypeError as e:
-        print(e)
-        return
-
-    for trans, subj in zip(all_trans, subjects):
-        grouped_translations[subj].append(trans)
+    grouped_translations = defaultdict(list)
+    
+    for row in bs.find_all('tr'):
+        tds = row.find_all('td')
+        if len(tds) >= 2:
+            a_tag = tds[0].find('a')
+            trans = tds[1].text.strip()
+            if a_tag and a_tag.has_attr('title'):
+                subj = a_tag['title']
+                grouped_translations[subj].append(trans)
 
     res = '\n\n'.join([f'{subj}: {", ".join(translations)}' for subj, translations in grouped_translations.items()])
     res = [[subj, ', '.join(translations)] for subj, translations in grouped_translations.items()]
