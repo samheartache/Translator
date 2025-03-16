@@ -11,8 +11,7 @@ import keyboard
 from multitran_dict import translate
 from selenium_translate import selenium_trans
 from languages import langs_multitran, lang_abr, lang_abr_reverso
-
-pytesseract.pytesseract.tesseract_cmd = os.getenv('TESS')
+import error_handle as err
 
 with open('settings.json', encoding='utf-8') as json_file:
     SETTINGS = json.load(json_file)
@@ -39,6 +38,11 @@ class ImageTranslator:
         self.canvas.pack(fill=ctk.BOTH, expand=True)
 
         self.menu = Menu(self)
+
+        pytesseract.pytesseract.tesseract_cmd = os.getenv('TESS')
+
+        if not pytesseract.pytesseract.tesseract_cmd:
+            self.create_errorwin(err.tesserr_title, err.TESS_ERROR, important=True)
         
         self.root.mainloop()
     
@@ -60,7 +64,7 @@ class ImageTranslator:
         try:
             text = pytesseract.image_to_string(image=image, lang='eng+rus').replace('\n', ' ')
         except:
-            self.create_errorwin(title='Text found error', labels=['Text not recognized', 'Please try highlighting the area again'])
+            self.create_errorwin(title=err.texterr_title, labels=err.TEXT_NOTFOUND)
             return
         
         if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
@@ -72,14 +76,15 @@ class ImageTranslator:
     
     def show_trans(self, src, tran, method):
         if not tran:
-            self.create_errorwin(title='Text found error', labels=['Text not recognized', 'Please try highlighting the area again'])
+            self.create_errorwin(title=err.texterr_title, labels=err.TEXT_NOTFOUND)
             return
         if method == 'multitran' and len(src.split()) > 1:
-                self.create_errorwin(title='Incorrect input for multitran', labels=['Multitran method can handle only single words'\
-                                                                                                   , 'If you want to translate bigger text choose  the reverso method'])
+                self.create_errorwin(title=err.multitranerr_title, labels=err.MULTITRAN_ERR)
                 return
+        
         x = int(self.screen_width * 0.3984)
         y = int(self.screen_height * 0.3264)
+        
         trans_window = ctk.CTkToplevel()
         trans_window.title('Translation')
         trans_window.geometry(f'520x250+{x}+{y}')
@@ -102,12 +107,13 @@ class ImageTranslator:
 
         trans_window.protocol("WM_DELETE_WINDOW", self.close)
 
-    def create_errorwin(self, title: str, labels: list[str]):
+    def create_errorwin(self, title: str, labels: list[str], important=False):
         window = ctk.CTkToplevel()
         x = int(self.screen_width * 0.4219)
         y = int(self.screen_height * 0.3612)
         window.geometry(f'400x200+{x}+{y}')
         window.title(title)
+        if important: window.grab_set()
 
         for label in labels:
             ctk.CTkLabel(window, text=label).pack(anchor="w", padx=10, pady=5)
