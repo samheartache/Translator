@@ -1,5 +1,5 @@
-import time
 import sys
+import os
 import json
 from tkinter import colorchooser
 
@@ -12,7 +12,7 @@ from multitran_dict import translate
 from selenium_translate import selenium_trans
 from languages import langs_multitran, lang_abr, lang_abr_reverso
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = os.getenv('TESS')
 
 with open('settings.json', encoding='utf-8') as json_file:
     SETTINGS = json.load(json_file)
@@ -51,14 +51,18 @@ class ImageTranslator:
     
     def screenshot(self, event):
         self.root.withdraw()
-        time.sleep(0.4)
         x1, y1 = min(self.x1, event.x), min(self.y1, event.y)
         x2, y2 = max(self.x1, event.x), max(self.y1, event.y)
         image = ImageGrab.grab(bbox=(x1, y1, x2, y2))
         self.translate_image(image)
     
     def translate_image(self, image):
-        text = pytesseract.image_to_string(image=image, lang='eng+rus').replace('\n', ' ')
+        try:
+            text = pytesseract.image_to_string(image=image, lang='eng+rus').replace('\n', ' ')
+        except:
+            self.create_errorwin(title='Text found error', labels=['Text not recognized', 'Please try highlighting the area again'])
+            return
+        
         if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
             sel_trans = selenium_trans(text.lower(), src=lang_abr_reverso[SETTINGS['Source language']], target=lang_abr_reverso[SETTINGS['Target language']])
             self.show_trans(text, sel_trans, method='sel')
@@ -68,16 +72,17 @@ class ImageTranslator:
     
     def show_trans(self, src, tran, method):
         if not tran:
-            self.create_errorwin(title='Text found error', size='400x200', labels=['Text not recognized', 'Please try highlighting the area again'])
+            self.create_errorwin(title='Text found error', labels=['Text not recognized', 'Please try highlighting the area again'])
             return
         if method == 'multitran' and len(src.split()) > 1:
-                self.create_errorwin(title='Incorrect input for multitran', size='400x200', labels=['Multitran method can handle only single words'\
+                self.create_errorwin(title='Incorrect input for multitran', labels=['Multitran method can handle only single words'\
                                                                                                    , 'If you want to translate bigger text choose  the reverso method'])
                 return
-        
+        x = int(self.screen_width * 0.3984)
+        y = int(self.screen_height * 0.3264)
         trans_window = ctk.CTkToplevel()
-        trans_window.title("Translation")
-        trans_window.geometry("520x250")
+        trans_window.title('Translation')
+        trans_window.geometry(f'520x250+{x}+{y}')
         
         ctk.CTkLabel(trans_window, text="Оригинал:").pack(anchor="w", padx=10, pady=5)
         ctk.CTkLabel(trans_window, text=src, wraplength=380).pack(anchor="w", padx=10)
@@ -97,9 +102,11 @@ class ImageTranslator:
 
         trans_window.protocol("WM_DELETE_WINDOW", self.close)
 
-    def create_errorwin(self, title: str, size: str, labels: list[str]):
+    def create_errorwin(self, title: str, labels: list[str]):
         window = ctk.CTkToplevel()
-        window.geometry(size)
+        x = int(self.screen_width * 0.4219)
+        y = int(self.screen_height * 0.3612)
+        window.geometry(f'400x200+{x}+{y}')
         window.title(title)
 
         for label in labels:
@@ -127,72 +134,15 @@ class ImageTranslator:
         self.root.quit()
         self.root.destroy()
         sys.exit(0)
-    
 
-class Settings:
-    def __init__(self, parent):
-        self.parent = parent
-        
-        self.settings_window = ctk.CTkToplevel()
-        self.settings_window.geometry("400x300")
-        self.settings_window.title("Settings")
-        self.settings_window.attributes('-topmost', True)
-        self.settings_window.grab_set()
-
-        self.create_labels('Theme', 'Highlighting color', 'Hot key', "Tranlation's method", 'Source language', 'Target language')
-
-        self.create_options(
-            theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
-            highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht', lambda x: self.update_setting('Highlighting color', x)],
-            key = [ctk.StringVar(value=SETTINGS['Hot key']), 'k', self.update_hotkey],
-            method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrap', 'Reverso scrap(Selenium)'], lambda x: self.update_setting('Method', x)],
-            srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), lambda x: self.update_setting('Source language', x)],
-            target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), lambda x: self.update_setting('Target language', x)]
-        )
-
-    def create_labels(self, *labels):
-        for ind, label in enumerate(labels):
-            ctk.CTkLabel(self.settings_window, text=label).grid(row=ind, column=0, padx=10, pady=10)
-
-    def create_options(self, **stats):
-        for ind, stat in enumerate(stats):
-            if stats[stat][1] == 'ht':
-                self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'], command=self.update_highlighting)
-                self.highlight_choice.grid(row=1, column=1, padx=10, pady=10)
-            elif stats[stat][1] == 'k':
-                self.hotkey_choice = ctk.CTkButton(self.settings_window, text=f'{SETTINGS["Hot key"]}(click=change)',\
-                                                   command=stats[stat][2])
-                self.hotkey_choice.grid(row=2, column=1, padx=10, pady=10)
-            else:
-                choice = ctk.CTkOptionMenu(self.settings_window, variable=stats[stat][0], values=stats[stat][1], command=stats[stat][2])
-                choice.grid(row=ind, column=1, padx=10, pady=10)
-    
-    def update_highlighting(self):
-        chosen_color = colorchooser.askcolor(title='Choose highlighting color')[1]
-        if chosen_color is None:
-            return
-        SETTINGS['Highlighting color'] = chosen_color
-        with open('settings.json', 'w', encoding='utf-8') as json_file:
-            json.dump(SETTINGS, json_file, indent=4)
-        self.highlight_choice.configure(fg_color=chosen_color)
-    
-    def update_setting(self, setting_option, selected, theme=False):
-        SETTINGS[setting_option] = selected
-        with open('settings.json', 'w', encoding='utf-8') as json_file:
-            json.dump(SETTINGS, json_file, indent=4)
-        if theme:
-            ctk.set_appearance_mode(selected.lower())
-    
-    def update_hotkey(self):
-        KeyTrack(self)
-    
 
 class Menu:
     def __init__(self, parent):
         self.parent = parent
 
+        x = int(self.parent.screen_width * 0.4625)
+
         self.menu_window = ctk.CTkToplevel()
-        x = (self.parent.screen_width - 192) // 2
         self.menu_window.geometry(f"192x45+{x}+0")
         self.menu_window.overrideredirect(True)
         self.menu_window.attributes("-topmost", True)
@@ -228,12 +178,78 @@ class Menu:
         sys.exit(0)
 
 
+class Settings:
+    def __init__(self, parent):
+        self.parent = parent
+
+        x = int(self.parent.parent.screen_width * 0.422) 
+        y = int(self.parent.parent.screen_height * 0.297)
+        
+        self.settings_window = ctk.CTkToplevel()
+        self.settings_window.geometry(f'400x300+{x}+{y}')
+        self.settings_window.title("Settings")
+        self.settings_window.attributes('-topmost', True)
+        self.settings_window.grab_set()
+
+        self.create_labels('Theme', 'Highlighting color', 'Hot key', "Tranlation's method", 'Source language', 'Target language')
+
+        self.create_options(
+            theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
+            highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht', lambda x: self.update_setting('Highlighting color', x)],
+            key = [ctk.StringVar(value=SETTINGS['Hot key']), 'k', self.update_hotkey],
+            method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrap', 'Reverso scrap(Selenium)'], lambda x: self.update_setting('Method', x)],
+            srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), lambda x: self.update_setting('Source language', x)],
+            target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), lambda x: self.update_setting('Target language', x)]
+        )
+
+    def create_labels(self, *labels):
+        for ind, label in enumerate(labels):
+            ctk.CTkLabel(self.settings_window, text=label).grid(row=ind, column=0, padx=10, pady=10)
+
+    def create_options(self, **stats):
+        for ind, stat in enumerate(stats):
+            if stats[stat][1] == 'ht':
+                self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'],\
+                                                       command=self.update_highlighting, width=200)
+                self.highlight_choice.grid(row=1, column=1, padx=10, pady=10)
+            elif stats[stat][1] == 'k':
+                self.hotkey_choice = ctk.CTkButton(self.settings_window, text=f'{SETTINGS["Hot key"]} (click=change)',\
+                                                   command=stats[stat][2], width=200)
+                self.hotkey_choice.grid(row=2, column=1, padx=10, pady=10)
+            else:
+                choice = ctk.CTkOptionMenu(self.settings_window, variable=stats[stat][0], values=stats[stat][1],\
+                                            command=stats[stat][2], width=200)
+                choice.grid(row=ind, column=1, padx=10, pady=10)
+    
+    def update_highlighting(self):
+        chosen_color = colorchooser.askcolor(title='Choose highlighting color', parent=self.settings_window)[1]
+        if chosen_color is None:
+            return
+        SETTINGS['Highlighting color'] = chosen_color
+        with open('settings.json', 'w', encoding='utf-8') as json_file:
+            json.dump(SETTINGS, json_file, indent=4)
+        self.highlight_choice.configure(fg_color=chosen_color)
+    
+    def update_setting(self, setting_option, selected, theme=False):
+        SETTINGS[setting_option] = selected
+        with open('settings.json', 'w', encoding='utf-8') as json_file:
+            json.dump(SETTINGS, json_file, indent=4)
+        if theme:
+            ctk.set_appearance_mode(selected.lower())
+    
+    def update_hotkey(self):
+        KeyTrack(self)
+    
+
 class Translator:
     def __init__(self, parent):
         self.parent = parent
 
+        x = int(self.parent.parent.screen_width * 0.3828125)
+        y = int(self.parent.parent.screen_height * 0.3)
+
         self.translator_wind = ctk.CTkToplevel()
-        self.translator_wind.geometry('600x400')
+        self.translator_wind.geometry(f'600x400+{x}+{y}')
         self.translator_wind.title('Translator')
         self.translator_wind.attributes('-topmost', True)
         self.translator_wind.grab_set()
@@ -325,9 +341,11 @@ class Translator:
 class KeyTrack:
     def __init__(self, parent):
         self.parent = parent
+        x = int(self.parent.parent.parent.screen_width * 0.2)
+        y = int(self.parent.parent.parent.screen_height * 0.32)
 
         self.track_wind = ctk.CTkToplevel()
-        self.track_wind.geometry('500x150+100+100')
+        self.track_wind.geometry(f'500x220+{x}+{y}')
         self.track_wind.title('Hot key reassignment')
         self.track_wind.grab_set()
 
@@ -339,11 +357,11 @@ class KeyTrack:
         self.input_area = ctk.CTkTextbox(self.track_wind, width=480, height=50, wrap='word')
         self.input_area.grid(row=1, column=0, columnspan=1, padx=10)
 
-        self.confirm_button = ctk.CTkButton(self.track_wind, text='Confirm', width=480, height=25, command=self.confirm)
-        self.confirm_button.grid(row=2, column=0, columnspan=1)
-
-        self.undo_button = ctk.CTkButton(self.track_wind, text='Undo', width=480, height=25, command=self.undo)
-        self.undo_button.grid(row=3, column=0, columnspan=1, pady=10)
+        self.create_buttons(
+            ['Confirm', self.confirm],
+            ['Undo', self.undo],
+            ['Clear', self.clear]
+        )
         
         keyboard.on_press(self.track_key)
     
@@ -355,16 +373,25 @@ class KeyTrack:
             self.current_key += f'+{key.name}'
             self.input_area.insert('end', f'+{key.name}')
     
-    def undo(self):
-        self.current_key = '+'.join(self.current_key.split('+')[:-1])
-        self.input_area.delete('1.0', 'end')
-        self.input_area.insert('end', self.current_key)
+    def create_buttons(self, *buttons):
+        for ind, button in enumerate(buttons, start=2):
+            btn = ctk.CTkButton(self.track_wind, text=button[0], width=480, height=25, command=button[1])
+            btn.grid(row=ind, column=0, columnspan=1, pady=10)
 
     def confirm(self):
         SETTINGS['Hot key'] = self.current_key
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
 
+    def undo(self):
+        self.current_key = '+'.join(self.current_key.split('+')[:-1])
+        self.input_area.delete('1.0', 'end')
+        self.input_area.insert('end', self.current_key)
+
+    def clear(self):
+        self.current_key = ''
+        self.input_area.delete('1.0', 'end')
+    
 
 if __name__ == '__main__':
     ImageTranslator()
