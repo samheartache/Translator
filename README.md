@@ -61,7 +61,7 @@
   
    - **NOTE**: For single-word translation, Multitran is used; for texts, Reverso is used.
 
-## Settings (settings.json)
+## Settings
 
 - **Highlight color**: Highlight color for the screen area (default: `red`).
   
