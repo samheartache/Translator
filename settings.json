@@ -1,10 +1,11 @@
 {
-    "Highlighting color": "#df5fe2",
+    "Highlighting color": "red",
     "Theme": "Dark",
     "Source language": "English",
     "Target language": "Russian",
-    "Hot key": "ctrl+alt+a",
-    "Method": "Multitran scrap",
-    "Default source": "German",
+    "Start hot key": "ctrl+alt+a",
+    "Exit hot key": "alt+e",
+    "Method": "Multitran scrape",
+    "Default source": "English",
     "Default target": "Russian"
 }

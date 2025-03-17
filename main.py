@@ -51,9 +51,12 @@ class ImageTranslator:
         self.rect = self.canvas.create_rectangle(self.x1, self.y1, event.x, event.y, outline=SETTINGS['Highlighting color'], width=3)
     
     def drag(self, event):
-        self.canvas.coords(self.rect, self.x1, self.y1, event.x, event.y)
+        if self.rect is not None:
+            self.canvas.coords(self.rect, self.x1, self.y1, event.x, event.y)
     
     def screenshot(self, event):
+        if self.x1 is None or self.y1 is None:
+            return
         self.root.withdraw()
         x1, y1 = min(self.x1, event.x), min(self.y1, event.y)
         x2, y2 = max(self.x1, event.x), max(self.y1, event.y)
@@ -67,7 +70,7 @@ class ImageTranslator:
             self.create_errorwin(title=err.texterr_title, labels=err.TEXT_NOTFOUND)
             return
         
-        if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
+        if SETTINGS['Method'] == 'Reverso scrape(Selenium)':
             sel_trans = selenium_trans(text.lower(), src=lang_abr_reverso[SETTINGS['Source language']], target=lang_abr_reverso[SETTINGS['Target language']])
             self.show_trans(text, sel_trans, method='sel')
         else:
@@ -154,8 +157,7 @@ class Menu:
         self.menu_window.attributes("-topmost", True)
         self.menu_window.focus_force()
 
-        self.menu_frame = ctk.CTkFrame(self.menu_window, width=200, height=50, 
-                                     fg_color="gray20", bg_color='black')
+        self.menu_frame = ctk.CTkFrame(self.menu_window, width=200, height=50, bg_color='black')
         self.menu_frame.pack(fill=ctk.BOTH, expand=True)
 
         original_setimage = Image.open('imgs/settings_img.png')
@@ -189,23 +191,29 @@ class Settings:
         self.parent = parent
 
         x = int(self.parent.parent.screen_width * 0.422) 
-        y = int(self.parent.parent.screen_height * 0.297)
+        y = int(self.parent.parent.screen_height * 0.33)
         
         self.settings_window = ctk.CTkToplevel()
-        self.settings_window.geometry(f'400x300+{x}+{y}')
+        self.settings_window.geometry(f'400x350+{x}+{y}')
         self.settings_window.title("Settings")
         self.settings_window.attributes('-topmost', True)
         self.settings_window.grab_set()
 
-        self.create_labels('Theme', 'Highlighting color', 'Hot key', "Tranlation's method", 'Source language', 'Target language')
+        self.create_labels('Theme', 'Source language', 'Target language', "Tranlation's method",\
+                            'Highlighting color', 'Start hot key', 'Exit hot key')
 
         self.create_options(
             theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
-            highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht', lambda x: self.update_setting('Highlighting color', x)],
-            key = [ctk.StringVar(value=SETTINGS['Hot key']), 'k', self.update_hotkey],
-            method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrap', 'Reverso scrap(Selenium)'], lambda x: self.update_setting('Method', x)],
-            srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), lambda x: self.update_setting('Source language', x)],
-            target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), lambda x: self.update_setting('Target language', x)]
+            srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), \
+                       lambda x: self.update_setting('Source language', x)],
+            target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), \
+                      lambda x: self.update_setting('Target language', x)],
+            method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrape', 'Reverso scrape(Selenium)'],\
+                       lambda x: self.update_setting('Method', x)],
+            highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht',\
+                          lambda x: self.update_setting('Highlighting color', x)],
+            startkey = [ctk.StringVar(value=SETTINGS['Start hot key']), SETTINGS['Start hot key'], lambda: self.update_hotkey(False)],
+            exitkey = [ctk.StringVar(value=SETTINGS['Exit hot key']), SETTINGS['Exit hot key'], lambda: self.update_hotkey(True)]
         )
 
     def create_labels(self, *labels):
@@ -214,17 +222,18 @@ class Settings:
 
     def create_options(self, **stats):
         for ind, stat in enumerate(stats):
-            if stats[stat][1] == 'ht':
+            val = stats[stat]
+            if val[1] == 'ht':
                 self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'],\
                                                        command=self.update_highlighting, width=200)
-                self.highlight_choice.grid(row=1, column=1, padx=10, pady=10)
-            elif stats[stat][1] == 'k':
-                self.hotkey_choice = ctk.CTkButton(self.settings_window, text=f'{SETTINGS["Hot key"]} (click=change)',\
-                                                   command=stats[stat][2], width=200)
-                self.hotkey_choice.grid(row=2, column=1, padx=10, pady=10)
+                self.highlight_choice.grid(row=ind, column=1, padx=10, pady=10)
+            elif not isinstance(val[1], list):
+                self.hotkey_choice = ctk.CTkButton(self.settings_window, text=f'{val[1]} (click=change)',\
+                                                   command=val[2], width=200)
+                self.hotkey_choice.grid(row=ind, column=1, padx=10, pady=10)
             else:
-                choice = ctk.CTkOptionMenu(self.settings_window, variable=stats[stat][0], values=stats[stat][1],\
-                                            command=stats[stat][2], width=200)
+                choice = ctk.CTkOptionMenu(self.settings_window, variable=val[0], values=stats[stat][1],\
+                                            command=val[2], width=200)
                 choice.grid(row=ind, column=1, padx=10, pady=10)
     
     def update_highlighting(self):
@@ -243,8 +252,8 @@ class Settings:
         if theme:
             ctk.set_appearance_mode(selected.lower())
     
-    def update_hotkey(self):
-        KeyTrack(self)
+    def update_hotkey(self, exit):
+        KeyTrack(self, exit=exit)
     
 
 class Translator:
@@ -305,7 +314,7 @@ class Translator:
         src_lang = lang_abr[self.src_lang_var.get()]
         target_lang = lang_abr[self.target_lang_var.get()]
 
-        if SETTINGS['Method'] == 'Reverso scrap(Selenium)':
+        if SETTINGS['Method'] == 'Reverso scrape(Selenium)':
             translated_text = selenium_trans(
                 input_text, src=lang_abr_reverso[SETTINGS['Source language']],
                 target=lang_abr_reverso[SETTINGS['Target language']]
@@ -345,8 +354,9 @@ class Translator:
 
 
 class KeyTrack:
-    def __init__(self, parent):
+    def __init__(self, parent, exit):
         self.parent = parent
+        self.exit = exit
         x = int(self.parent.parent.parent.screen_width * 0.2)
         y = int(self.parent.parent.parent.screen_height * 0.32)
 
@@ -365,7 +375,7 @@ class KeyTrack:
 
         self.create_buttons(
             ['Confirm', self.confirm],
-            ['Undo', self.undo],
+            ['Undo (backspace)', self.undo],
             ['Clear', self.clear]
         )
         
@@ -375,6 +385,8 @@ class KeyTrack:
         if not self.current_key:
             self.current_key += key.name
             self.input_area.insert('end', key.name)
+        elif key.name == 'backspace':
+            self.undo()
         else:
             self.current_key += f'+{key.name}'
             self.input_area.insert('end', f'+{key.name}')
@@ -385,9 +397,13 @@ class KeyTrack:
             btn.grid(row=ind, column=0, columnspan=1, pady=10)
 
     def confirm(self):
-        SETTINGS['Hot key'] = self.current_key
+        if self.exit:
+            SETTINGS['Exit hot key'] = self.current_key
+        else:
+            SETTINGS['Start hot key'] = self.current_key
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
+        self.track_wind.destroy()
 
     def undo(self):
         self.current_key = '+'.join(self.current_key.split('+')[:-1])

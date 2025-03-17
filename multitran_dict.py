@@ -13,8 +13,8 @@ def translate(word: str, src, target) -> str:
     }
 
     response = requests.get('https://www.multitran.com/m.exe', params=params, cookies=cookies, headers=headers)
-
     bs = BeautifulSoup(response.text, 'lxml')
+    
     grouped_translations = defaultdict(list)
     
     for row in bs.find_all('tr'):
