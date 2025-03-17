@@ -10,8 +10,8 @@ import keyboard
 
 from multitran_dict import translate
 from selenium_translate import selenium_trans
-from languages import langs_multitran, lang_abr, lang_abr_reverso
-import error_handle as err
+from data.languages import langs_multitran, lang_abr, lang_abr_reverso
+import data.error_handle as err
 
 with open('settings.json', encoding='utf-8') as json_file:
     SETTINGS = json.load(json_file)

@@ -3,7 +3,7 @@ from collections import defaultdict
 import requests
 from bs4 import BeautifulSoup
 
-from curls.multitran_curl import cookies, headers
+from data.multitran_curl import cookies, headers
 
 def translate(word: str, src, target) -> str:
     params = {
