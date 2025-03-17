@@ -2,19 +2,34 @@
 
 **Translator** is a tool for translating text from images, as well as translating individual words and texts from various languages. It uses the [Tesseract](https://github.com/tesseract-ocr/tesseract) library for text extraction from images and scraping of Multitran and Reverso websites for translation. For user convenience, hotkeys and customizable settings are provided.
 
+---
+
+## Navigation
+
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Settings](#settings)
+  - [Known Dismerits](#known-dismerits)
+  
+---
+
+
 ## Features
 
 - **Text translation from images**: Use screen area selection to capture text from an image and translate it.
   
 - **Two different methods for translation**:
   
-  - **Single-word translation**: Scraping the Multitran website for translating individual words. It provides a wide diversity of translations for one word. In addition, translations are divided into categoties.
+  - **Single-word translation**: Scraping the Multitran website for translating individual words. It provides a wide diversity of translations for one word. In addition, translations are divided into categories.
   
   - **Reverso dynamic scrape**: Scraping the Reverso website using Selenium for translating single words and even large texts (in the current version, it is recommended to use Multitran for single-word translation, for Selenium is pretty slow even for single words).
   
 - **Hotkeys**: Launch the application and terminate it using customizable hotkeys.
   
 - **Settings**: Ability to choose the theme, translation language, translation method, highlighting color and hotkeys.
+
+---
 
 ## Installation
 
@@ -42,6 +57,8 @@
      tesseract --list-langs
      ```
 
+---
+
 ## Usage
 
 1. **Launching the application**:
@@ -61,6 +78,8 @@
   
    - **NOTE**: For single-word translation, Multitran is used; for texts, Reverso is used.
 
+---
+
 ## Settings
 
 - **Highlight color**: Highlight color for the screen area (default: `red`).
@@ -76,26 +95,15 @@
 - **Exit hot key**: Hotkey for terminating the application (default: `Alt+E`).
   
 - **Method**: Translation method (`Multitran scrape` or `Reverso scrape(Selenium)`).
-  
 
-## Project Structure
-
-- **main.py**: The main application file containing the logic for the interface and translation.
-  
-- **runner.py**: File to run the application in background and then launch it using hotkeys.
-  
-- **settings.json**: Application settings file.
-  
-- **multitran_dict.py**: Module for scraping the Multitran website.
-  
-- **selenium_translate.py**: Module for scraping the Reverso website using Selenium.
-  
-- **languages.py**: file with data on supported languages.
-  
-- **error_handle.py**: file for all error messages and titles.
+---
 
 ## Known Dismerits
 
 - **Dynamic scraping of Reverso**: The current implementation of Reverso scraping using Selenium is inefficient, because the translation lasts too long even for single words. It is recommended to use Multitran for single-word translation.
   
 - **Tesseract language support**: Ensure that the required language data for Tesseract is installed. If a language is missing, the application may fail to extract text correctly.
+
+---
+
+**Enjoy using Translator!** If you have any questions or suggestions, feel free to open an issue in the repository.
