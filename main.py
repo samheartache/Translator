@@ -48,7 +48,7 @@ class ImageTranslator:
     
     def press(self, event):
         self.x1, self.y1 = event.x, event.y
-        self.rect = self.canvas.create_rectangle(self.x1, self.y1, event.x, event.y, outline=SETTINGS['Highlighting color'], width=3)
+        self.rect = self.canvas.create_rectangle(self.x1, self.y1, event.x, event.y, outline=SETTINGS['Highlight color'], width=3)
     
     def drag(self, event):
         if self.rect is not None:
@@ -200,7 +200,7 @@ class Settings:
         self.settings_window.grab_set()
 
         self.create_labels('Theme', 'Source language', 'Target language', "Tranlation's method",\
-                            'Highlighting color', 'Start hot key', 'Exit hot key')
+                            'Highlight color', 'Start hot key', 'Exit hot key')
 
         self.create_options(
             theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
@@ -210,8 +210,8 @@ class Settings:
                       lambda x: self.update_setting('Target language', x)],
             method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrape', 'Reverso scrape(Selenium)'],\
                        lambda x: self.update_setting('Method', x)],
-            highlight = [ctk.StringVar(value=SETTINGS['Highlighting color']), 'ht',\
-                          lambda x: self.update_setting('Highlighting color', x)],
+            highlight = [ctk.StringVar(value=SETTINGS['Highlight color']), 'ht',\
+                          lambda x: self.update_setting('Highlight color', x)],
             startkey = [ctk.StringVar(value=SETTINGS['Start hot key']), SETTINGS['Start hot key'], lambda: self.update_hotkey(False)],
             exitkey = [ctk.StringVar(value=SETTINGS['Exit hot key']), SETTINGS['Exit hot key'], lambda: self.update_hotkey(True)]
         )
@@ -224,7 +224,7 @@ class Settings:
         for ind, stat in enumerate(stats):
             val = stats[stat]
             if val[1] == 'ht':
-                self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlighting color'],\
+                self.highlight_choice = ctk.CTkButton(self.settings_window, text='', fg_color=SETTINGS['Highlight color'],\
                                                        command=self.update_highlighting, width=200)
                 self.highlight_choice.grid(row=ind, column=1, padx=10, pady=10)
             elif not isinstance(val[1], list):
@@ -237,10 +237,10 @@ class Settings:
                 choice.grid(row=ind, column=1, padx=10, pady=10)
     
     def update_highlighting(self):
-        chosen_color = colorchooser.askcolor(title='Choose highlighting color', parent=self.settings_window)[1]
+        chosen_color = colorchooser.askcolor(title='Choose highlight color', parent=self.settings_window)[1]
         if chosen_color is None:
             return
-        SETTINGS['Highlighting color'] = chosen_color
+        SETTINGS['Highlight color'] = chosen_color
         with open('settings.json', 'w', encoding='utf-8') as json_file:
             json.dump(SETTINGS, json_file, indent=4)
         self.highlight_choice.configure(fg_color=chosen_color)
