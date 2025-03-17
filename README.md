@@ -1,6 +1,6 @@
 # Translator
 
-**Translator** is a tool for translating text from images, as well as translating individual words and texts from various languages. It uses the [Tesseract](https://github.com/tesseract-ocr/tesseract) library for text extraction from images and scraping of Multitran and Reverso websites for translation. For user convenience, hotkeys and customizable settings are provided.
+**Translator** is a tool for translating text from images, as well as translating individual words and texts from various languages. It uses the [Tesseract](https://github.com/tesseract-ocr/tesseract) for text extraction from images and scraping of Multitran and Reverso websites for translation. For user convenience, hotkeys and customizable settings are provided.
 
 ---
 
