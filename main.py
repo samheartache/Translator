@@ -149,15 +149,15 @@ class Menu:
     def __init__(self, parent):
         self.parent = parent
 
-        x = int(self.parent.screen_width * 0.4625)
+        x = int(self.parent.screen_width * 0.418)
 
         self.menu_window = ctk.CTkToplevel()
-        self.menu_window.geometry(f"192x45+{x}+0")
+        self.menu_window.geometry(f"420x45+{x}+0")
         self.menu_window.overrideredirect(True)
         self.menu_window.attributes("-topmost", True)
         self.menu_window.focus_force()
 
-        self.menu_frame = ctk.CTkFrame(self.menu_window, width=200, height=50, bg_color='black')
+        self.menu_frame = ctk.CTkFrame(self.menu_window, width=420, height=45, bg_color='black')
         self.menu_frame.pack(fill=ctk.BOTH, expand=True)
 
         original_setimage = Image.open('imgs/settings_img.png')
@@ -166,6 +166,20 @@ class Menu:
             self.menu_frame, command=self.open_settings, fg_color="transparent", width=30, height=30, image=self.settings_image, text=''
         )
         self.settings_button.pack(side="left", padx=5, pady=5)
+
+        self.src_vals = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), \
+                       lambda x: self.update_setting('Source language', x)]
+        
+        self.target_vals = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), \
+                      lambda x: self.update_setting('Target language', x)]
+        
+        self.src_lang = ctk.CTkOptionMenu(self.menu_frame, variable=self.src_vals[0], values=self.src_vals[1],\
+                                            command=self.src_vals[2], width=100)
+        self.src_lang.pack(side="left", padx=5, pady=5)
+
+        self.target_lang = ctk.CTkOptionMenu(self.menu_frame, variable=self.target_vals[0], values=self.target_vals[1],\
+                                            command=self.target_vals[2], width=100)
+        self.target_lang.pack(side="left", padx=5, pady=5)
 
         self.translator_button = ctk.CTkButton(self.menu_frame, command=self.translator, text='Translator', width=60, height=30)
         self.translator_button.pack(side="left", padx=5, pady=5)
@@ -180,6 +194,11 @@ class Menu:
     
     def translator(self):
         Translator(self)
+    
+    def update_setting(self, setting, selected):
+        SETTINGS[setting] = selected
+        with open('settings.json', 'w', encoding='utf-8') as json_file:
+            json.dump(SETTINGS, json_file, indent=4)
 
     def close(self):
         self.menu_window.destroy()
@@ -204,10 +223,8 @@ class Settings:
 
         self.create_options(
             theme = [ctk.StringVar(value=SETTINGS['Theme']), ["Dark", "Light"], lambda x: self.update_setting('Theme', x, theme=True)],
-            srclang = [ctk.StringVar(value=SETTINGS['Source language']), list(lang_abr.keys()), \
-                       lambda x: self.update_setting('Source language', x)],
-            target = [ctk.StringVar(value=SETTINGS['Target language']), list(lang_abr.keys()), \
-                      lambda x: self.update_setting('Target language', x)],
+            srclang = self.parent.src_vals,
+            target = self.parent.target_vals,
             method = [ctk.StringVar(value=SETTINGS["Method"]), ['Multitran scrape', 'Reverso scrape(Selenium)'],\
                        lambda x: self.update_setting('Method', x)],
             highlight = [ctk.StringVar(value=SETTINGS['Highlight color']), 'ht',\
