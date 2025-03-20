@@ -56,6 +56,7 @@
      ```bash
      tesseract --list-langs
      ```
+     **NOTE:** tesseract language data influence only detecting text property, it doesn't affect the quality of translation itself.
 
 ---
 
@@ -72,7 +73,7 @@
 
 2. **Using the application**:
    
-   - After launching the application, a menu will appear at the top of the screen, where you can either open the settings or launch the default Translation tool for manual text input.
+   - After launching the application, a menu will appear at the top of the screen, where you can either open the settings, change current languages or launch the default Translation tool for manual text input.
   
    - Also you can select the area of the screen right after the app starts, the text will be automatically extracted and translated according to the selected settings.
   
