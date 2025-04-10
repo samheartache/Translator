@@ -35,7 +35,7 @@
 
 1. **Install Tesseract**:
    
-   - Download and install Tesseract OCR from the [official repository](https://github.com/tesseract-ocr/tesseract).
+   - Download and install Tesseract OCR from the [official site](https://sourceforge.net/projects/tesseract-ocr.mirror/).
   
    - Add Tesseract run file to the environment variables with the name **TESS**.
 
